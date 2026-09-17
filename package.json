@@ -1,0 +1,56 @@
+{
+    "name": "@megaofmegalodon/schemapack",
+    "version": "1.0.0",
+    "description": "A schema-driven binary protocol engine for JS/TS.",
+    "homepage": "https://github.com/megaofmegalodon/schemapack#readme",
+    "bugs": {
+        "url": "https://github.com/megaofmegalodon/schemapack/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/megaofmegalodon/schemapack.git"
+    },
+    "keywords": [
+        "binary",
+        "protocol",
+        "encoder",
+        "decoder",
+        "schema",
+        "websocket",
+        "game-networking",
+        "arraybuffer",
+        "typescript"
+    ],
+    "publishConfig": {
+        "access": "public"
+    },
+    "scripts": {
+        "build": "tsup && tsc --emitDeclarationOnly --outDir dist",
+        "test": "vitest run"
+    },
+    "files": [
+        "dist"
+    ],
+    "license": "MIT",
+    "author": "megaofmegalodon",
+    "type": "module",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "types": "./dist/src/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/src/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs"
+        }
+    },
+    "devDependencies": {
+        "tsup": "^8.5.1",
+        "typescript": "^7.0.2",
+        "vitest": "^5.0.1"
+    },
+    "allowScripts": {
+        "fsevents@2.3.3": true,
+        "esbuild@0.27.7": true
+    }
+}

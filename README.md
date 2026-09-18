@@ -180,7 +180,7 @@ const schema = SchemaPack.register({
     scores: ["u16"],
 
     // Fixed-length array of "u16" values of length 50
-    scoreHistory: { buffer: "u16", length: 50 }
+    scoreHistory: { buffer: "u16", length: 50 },
 
     // Nested object
     position: { x: "f32", y: "f32" },

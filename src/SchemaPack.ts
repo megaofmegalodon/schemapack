@@ -55,8 +55,15 @@ export class SchemaPack {
     }
 
     /**
+     * Resizes SchemaPack's shared internal scratchpad buffer.
      * 
-     * @param newSize 
+     * Replaces the existing memory allocation with a newly allocated `Uint8Array` 
+     * of the specified size and re-binds the internal `DataView`.
+     * 
+     * @param newSize - The new buffer capacity in bytes.
+     * 
+     * @warning Any un-sliced `.subarray()` references previously returned by `encode` 
+     * will still point to the old buffer allocation, not this new buffer.
      */
 
     static resize(newSize: number) {
@@ -157,13 +164,29 @@ export class SchemaPack {
     }
 
     /**
+     * Encodes a JavaScript payload into a packed binary buffer using the pre-compiled
+     * instructions associated with the given opcode.
      * 
-     * @param opcode 
-     * @param data 
-     * @returns 
+     * The encoded packet prepends the 1-byte opcode identifier at index `0`, followed
+     * by packed primitives, objects, or arrays according to the registered schema layout.
+     * 
+     * @param opcode - The unique schema opcode ID returned by {@link SchemaPack.register}.
+     * @param data - The raw primitive value, object, or array matching the registered schema structure.
+     * @param makeCopy
+     * * If `true`, copies the encoded bytes into a new buffer instance via `.slice()`. 
+     * * If `false`, returns a fast, zero-copy `.subarray()` view of the internal scratchpad buffer.
+     * * Default is `false`.
+     * @returns A `Uint8Array` containing the binary encoded payload.
+     * 
+     * @throws {Error} If `opcode` has not been registered.
+     * @throws {Error} If `data` type does not match the expected primitive or buffer structure.
+     * 
+     * @warning **Ephemeral Views:** When `makeCopy` is `false`, the returned array points directly to 
+     * the internal `scratchPadBuffer`. Subsequent calls to `encode` or `decode` will overwrite these bytes. 
+     * Set `makeCopy` to `true` or manually invoke `.slice()` if storing the output across async frames.
      */
 
-    static encode(opcode: number, data: any) {
+    static encode(opcode: number, data: any, makeCopy: boolean = false) {
         const instructions = this.opcodeToInstructions.get(opcode);
         if (!instructions)
             throw new Error(`SchemaPack: Cannot encode unknown opcode '${opcode}'`);
@@ -283,13 +306,22 @@ export class SchemaPack {
             }
         }
 
-        return this.scratchPadBuffer.subarray(0, totalLength);
+        return makeCopy ? this.scratchPadBuffer.slice(0, totalLength) : this.scratchPadBuffer.subarray(0, totalLength);
     }
 
     /**
+     * Decodes a packed binary buffer back into its original JavaScript representation.
      * 
-     * @param data 
-     * @returns 
+     * Reads the 1-byte opcode identifier at byte offset `0` to look up the matching schema 
+     * instructions, copies the input payload into the shared scratchpad workspace, and 
+     * unpacks primitives, nested objects, arrays, and typed buffers accordingly.
+     * 
+     * @param data - The packed binary byte array to decode. Byte 0 must contain a registered schema opcode.
+     * @returns The decoded JavaScript data—which can be a primitive number, boolean, array, or structured object matching the schema.
+     * 
+     * @throws {Error} If `data` is empty, missing, or falsy.
+     * @throws {Error} If the opcode at byte `0` has not been registered via {@link SchemaPack.register}.
+     * @throws {Error} If buffer lengths encoded within the packet exceed the total payload byte length.
      */
 
     static decode(data: Uint8Array): any {
@@ -419,15 +451,35 @@ export class SchemaPack {
     }
 
     /**
+     * Registers a packet schema structure and compiles it into a set of fast byte-packing instructions.
      * 
-     * @param layout 
-     * @returns 
+     * Auto-increments and assigns a unique 1-byte opcode integer identifier (`0` to `255`) to the registered
+     * layout. The generated instruction set is cached internally to enable zero-parse overhead during 
+     * subsequent `encode` and `decode` operations.
+     * 
+     * @param layout - The schema definition describing the payload fields, primitive types, nested objects, or typed buffer arrays.
+     * @returns The newly allocated opcode integer identifier associated with this schema layout.
+     * 
+     * @throws {Error} If the max limit of 256 unique opcodes has been exceeded.
+     * @throws {Error} If `layout` contains unsupported type names or malformed structure definitions.
+     * 
+     * @example
+     * ```typescript
+     * const playerStateOpcode = SchemaPack.register({
+     *   id: "u16",
+     *   position: { x: "f32", y: "f32" },
+     *   health: "u8"
+     * });
+     * ```
      */
 
     static register(layout: PacketSchemaLayout): number {
         const instructions: Instruction[] = [];
         const opcode = this.opcodes++;
         const INITIAL_OFFSET = 1;
+
+        if (opcode > 255)
+            throw new Error(`SchemaPack: Max number of unique single byte opcodes have been reached.`);
 
         this.walkFields(layout, instructions, INITIAL_OFFSET);
         this.opcodeToInstructions.set(opcode, instructions);

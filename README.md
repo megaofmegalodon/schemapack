@@ -190,5 +190,7 @@ const schema = SchemaPack.register({
 });
 ```
 
+> Note: All "arrays" are internally tuples, for dynamic array creation, use BufferTypes.
+
 ## License
 This project is licensed under MIT.

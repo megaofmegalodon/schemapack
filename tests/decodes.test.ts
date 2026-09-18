@@ -2,6 +2,12 @@ import { describe, expect, it, test } from "vitest";
 import { SchemaPack } from "../src/SchemaPack";
 
 describe("decodes raw primitives correctly", () => {
+    test("decodes bool", () => {
+        const opcode = SchemaPack.register("bool");
+        const data = new Uint8Array([opcode, 1]);
+        expect(SchemaPack.decode(data)).toBe(true);
+    });
+
     test("decodes u8 / byte", () => {
         const opcode = SchemaPack.register("u8");
 
@@ -102,6 +108,21 @@ describe("decodes primitive arrays correctly", () => {
             [-273.15, 123456.789],
             [-0.00001]
         ]);
+    });
+
+    test("decodes mixed primitive arrays", () => {
+        const opcode = SchemaPack.register(["f64", ["u8", "f64"], ["f64"], ["bool", "u32", [["bool", "bool"]]]]);
+        const data = [6.28, [255, 3.14], [1.6], [false, 200000, [[false, true]]]];
+        const bytes = SchemaPack.encode(opcode, data);
+        const parsed = SchemaPack.decode(bytes);
+
+        expect(parsed[0]).toBeCloseTo(6.28);
+        expect(parsed[1][0]).toBe(255);
+        expect(parsed[1][1]).toBeCloseTo(3.14);
+        expect(parsed[2][0]).toBeCloseTo(1.6);
+        expect(parsed[3][0]).toBe(false);
+        expect(parsed[3][1]).toBe(200000);
+        expect(parsed[3][2]).toStrictEqual([[false, true]]);
     });
 });
 

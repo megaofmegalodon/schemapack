@@ -1,5 +1,5 @@
 export const TypeSize = {
-    "i8": 1, "u8": 1,
+    "bool": 1, "i8": 1, "u8": 1,
     "i16": 2, "u16": 2,
     "i32": 4, "u32": 4, "f32": 4,
     "f64": 8
@@ -29,7 +29,7 @@ type CreateBufferObjectInstruction = { op: "CREATE_BUFFER_OBJ", type: PrimitiveT
 type Instruction = EnterObjectInstruction | CreateBufferObjectInstruction | ExistObjectInstruction | NewArrayInstruction | ExitArrayInstruction | PrimitiveInstruction;
 
 const TypedConstructors = {
-    i8: Int8Array, u8: Uint8Array,
+    bool: Uint8Array, i8: Int8Array, u8: Uint8Array,
     i16: Int16Array, u16: Uint16Array,
     i32: Int32Array, u32: Uint32Array, f32: Float32Array,
     f64: Float64Array
@@ -47,7 +47,7 @@ export class SchemaPack {
     private static scratchPadView = new DataView(this.scratchPadBuffer.buffer);
 
     private static isPrimitiveType(val: string) {
-        return val === "i8" || val === "u8" || val === "i16" || val === "u16" || val === "i32" || val === "u32" || val === "f32" || val === "f64";
+        return val === "bool" || val === "i8" || val === "u8" || val === "i16" || val === "u16" || val === "i32" || val === "u32" || val === "f32" || val === "f64";
     }
 
     private static getTypedConstructor(type: PrimitiveType) {
@@ -94,14 +94,18 @@ export class SchemaPack {
         }
 
         if (!Array.isArray(fields) && typeof fields === "object") {
-            if (fields["buffer"]) {
+            if (fields.buffer) {
                 fields = fields as BufferType;
+                const isBool = fields.buffer == "bool";
+
+                if (isBool && fields.useTyped)
+                    throw new Error(`SchemaPack: Cannot use TypedArray for buffer typeof bool.`);
 
                 instructions.push({
                     op: "CREATE_BUFFER_OBJ",
-                    type: fields["buffer"],
-                    useTyped: !!fields["useTyped"],
-                    length: fields["length"],
+                    type: fields.buffer,
+                    useTyped: !!fields.useTyped,
+                    length: fields.length,
                     key
                 });
             } else {
@@ -126,6 +130,7 @@ export class SchemaPack {
 
     private static getVal(type: PrimitiveType, offset: number) {
         switch (type) {
+            case "bool": return this.scratchPadView.getUint8(offset);
             case "i8": return this.scratchPadView.getInt8(offset);
             case "u8": return this.scratchPadView.getUint8(offset);
             case "i16": return this.scratchPadView.getInt16(offset, true);
@@ -139,6 +144,7 @@ export class SchemaPack {
 
     private static setVal(type: PrimitiveType, offset: number, val: number) {
         switch (type) {
+            case "bool": return this.scratchPadView.setUint8(offset, val);
             case "i8": return this.scratchPadView.setInt8(offset, val);
             case "u8": return this.scratchPadView.setUint8(offset, val);
             case "i16": return this.scratchPadView.setInt16(offset, val, true);
@@ -169,7 +175,8 @@ export class SchemaPack {
             if (typeof data !== "number")
                 throw new Error(`SchemaPack: Expected raw primitive number.`);
 
-            this.setVal(firstInstruction.type, 1, data);
+            const isBool = firstInstruction.type === "bool";
+            this.setVal(firstInstruction.type, 1, isBool ? data ? 1 : 0 : data);
             return this.scratchPadBuffer.subarray(0, 1 + TypeSize[firstInstruction.type]);
         }
 
@@ -184,6 +191,7 @@ export class SchemaPack {
 
             if (inst.op === "PRIMITIVE") {
                 const currentItem = itemStack[currentDepth];
+                const isBool = inst.type === "bool";
                 let val: number;
 
                 if (Array.isArray(currentItem)) {
@@ -196,7 +204,7 @@ export class SchemaPack {
                     val = currentItem;
                 }
 
-                this.setVal(inst.type, inst.offset + offsetPadding, val);
+                this.setVal(inst.type, inst.offset + offsetPadding, isBool ? val ? 1 : 0 : val);
                 totalLength += TypeSize[inst.type];
             } else if (inst.op === "ENTER_OBJECT") {
                 if (i === 0) continue;
@@ -237,6 +245,7 @@ export class SchemaPack {
             } else if (inst.op === "CREATE_BUFFER_OBJ") {
                 const currentItem = itemStack[currentDepth];
                 const size = TypeSize[inst.type];
+                const isBool = inst.type === "bool";
                 let arr: number[];
 
                 if (Array.isArray(currentItem)) {
@@ -265,7 +274,8 @@ export class SchemaPack {
                     totalLength += sourceBytes.byteLength;
                 } else {
                     for (let j = 0; j < arr.length; j++) {
-                        this.setVal(inst.type, totalLength, arr[j]);
+                        const val = arr[j];
+                        this.setVal(inst.type, totalLength, isBool ? val ? 1 : 0 : val);
                         offsetPadding += size;
                         totalLength += size;
                     }
@@ -296,7 +306,9 @@ export class SchemaPack {
         this.scratchPadBuffer.set(data, 0);
 
         if (firstInstruction.op === "PRIMITIVE" && firstInstruction.raw) {
-            return this.getVal(firstInstruction.type, 1);
+            const val = this.getVal(firstInstruction.type, 1);
+            const isBool = firstInstruction.type === "bool";
+            return isBool ? val ? true : false : val;
         }
 
         const result: any = firstInstruction.op === "ENTER_OBJECT" ? {} : [];
@@ -312,12 +324,14 @@ export class SchemaPack {
 
             if (inst.op === "PRIMITIVE") {
                 const targetItem = itemStack[currentDepth];
+                const isBool = inst.type === "bool";
+                const val = this.getVal(inst.type, inst.offset + offsetPadding);
 
                 if (!Array.isArray(targetItem) && inst.key) {
-                    targetItem[inst.key] = this.getVal(inst.type, inst.offset + offsetPadding);
+                    targetItem[inst.key] = isBool ? val ? true : false : val;
                 } else {
                     const currentIndex = indexStack[currentDepth];
-                    targetItem[currentIndex] = this.getVal(inst.type, inst.offset + offsetPadding);
+                    targetItem[currentIndex] = isBool ? val ? true : false : val;
                     indexStack[currentDepth]++;
                 }
 
@@ -359,6 +373,7 @@ export class SchemaPack {
             } else if (inst.op === "CREATE_BUFFER_OBJ") {
                 const targetItem = itemStack[currentDepth];
                 const length = inst.length ?? this.getVal(this.BUFFER_LENGTH_TYPE, currentLength);
+                const isBool = inst.type === "bool";
 
                 if (inst.length === undefined) {
                     offsetPadding += this.BUFFER_LENGTH_SIZE;
@@ -391,7 +406,8 @@ export class SchemaPack {
                     currentLength += byteLength;
                 } else {
                     for (let i = 0; i < length; i++) {
-                        target[i] = this.getVal(inst.type, currentLength);
+                        const val = this.getVal(inst.type, currentLength);
+                        target[i] = isBool ? val ? true : false : val;
                         offsetPadding += size;
                         currentLength += size;
                     }

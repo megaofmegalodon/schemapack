@@ -52,25 +52,25 @@ const samplePayload = {
 ```
 
 #### After 50,000 Iterations
-| Library              | Payload Size | Encoding (ops/sec) | Decoding (ops/sec) |
-| -------------------- | ------------ | ------------------ | ------------------ |
-| SchemaPack           |   41 bytes   | 5,990,894 ops/s    | 2,949,584 ops/s    |
-| MessagePack          |   86 bytes   | 1,359,638 ops/s    | 2,593,664 ops/s    |
-| Native JSON Methods  |   96 bytes   | 3,084,555 ops/s    | 2,596,352 ops/s    |
+| Library              | Payload Size | Encoding (ops/sec) | Decoding (ops/sec) | Pooled Decoding (ops/sec) |
+| -------------------- | ------------ | ------------------ | ------------------ | ------------------------- |
+| SchemaPack           |   33 bytes   | 5,799,511 ops/s    | 4,824,974 ops/s    | 4,273,992 ops/s           |
+| MessagePack          |   86 bytes   | 1,350,982 ops/s    | 2,539,898 ops/s    | N/A                       |
+| Native JSON Methods  |   96 bytes   | 3,188,682 ops/s    | 2,613,633 ops/s    | N/A                       |
 
 #### After 1,000,000 Iterations
-| Library              | Payload Size | Encoding (ops/sec) | Decoding (ops/sec) |
-| -------------------- | ------------ | ------------------ | ------------------ |
-| SchemaPack           |   41 bytes   | 4,985,560 ops/s    | 2,937,055 ops/s    |
-| MessagePack          |   86 bytes   | 1,315,972 ops/s    | 2,555,684 ops/s    |
-| Native JSON Methods  |   96 bytes   | 3,286,486 ops/s    | 2,564,398 ops/s    |
+| Library              | Payload Size | Encoding (ops/sec) | Decoding (ops/sec) | Pooled Decoding (ops/sec) |
+| -------------------- | ------------ | ------------------ | ------------------ | ------------------------- |
+| SchemaPack           |   33 bytes   | 6,436,263 ops/s    | 4,989,230 ops/s    | 4,582,111 ops/s           |
+| MessagePack          |   86 bytes   | 1,297,098 ops/s    | 2,580,810 ops/s    | N/A                       |
+| Native JSON Methods  |   96 bytes   | 3,272,478 ops/s    | 2,300,813 ops/s    | N/A                       |
 
 #### After 10,000,000 Iterations
-| Library              | Payload Size | Encoding (ops/sec) | Decoding (ops/sec) |
-| -------------------- | ------------ | ------------------ | ------------------ |
-| SchemaPack           |   41 bytes   | 6,575,424 ops/s    | 3,044,456 ops/s    |
-| MessagePack          |   86 bytes   | 1,327,414 ops/s    | 2,627,349 ops/s    |
-| Native JSON Methods  |   96 bytes   | 3,324,393 ops/s    | 2,596,696 ops/s    |
+| Library              | Payload Size | Encoding (ops/sec) | Decoding (ops/sec) | Pooled Decoding (ops/sec) |
+| -------------------- | ------------ | ------------------ | ------------------ | ------------------------- |
+| SchemaPack           |   33 bytes   | 6,598,867 ops/s    | 4,943,375 ops/s    | 4,848,845 ops/s           |
+| MessagePack          |   86 bytes   | 1,320,426 ops/s    | 2,622,500 ops/s    | N/A                       |
+| Native JSON Methods  |   96 bytes   | 3,200,103 ops/s    | 2,544,954 ops/s    | N/A                       |
 
 ### Test Two
 Passing in this object as the payload for all libraries:
@@ -85,25 +85,25 @@ const samplePayload = {
 ```
 
 #### After 50,000 Iterations
-| Library              | Payload Size | Encoding (ops/sec) | Decoding (ops/sec) |
-| -------------------- | ------------ | ------------------ | ------------------ |
-| SchemaPack           |   59 bytes   | 2,854,058 ops/s    | 1,675,114 ops/s    |
-| MessagePack          |  150 bytes   | 900,434 ops/s      | 1,378,111 ops/s    |
-| Native JSON Methods  |  205 bytes   | 1,551,087 ops/s    | 1,267,206 ops/s    |
+| Library              | Payload Size | Encoding (ops/sec) | Decoding (ops/sec) | Pooled Decoding (ops/sec) |
+| -------------------- | ------------ | ------------------ | ------------------ | ------------------------- |
+| SchemaPack           |   40 bytes   | 3,733,224 ops/s    | 3,064,430 ops/s    | 3,185,635 ops/s           |
+| MessagePack          |  150 bytes   |   758,329 ops/s    | 1,209,927 ops/s    | N/A                       |
+| Native JSON Methods  |  205 bytes   | 1,575,301 ops/s    | 1,264,901 ops/s    | N/A                       |
 
 #### After 1,000,000 Iterations
-| Library              | Payload Size | Encoding (ops/sec) | Decoding (ops/sec) |
-| -------------------- | ------------ | ------------------ | ------------------ |
-| SchemaPack           |   59 bytes   | 2,943,854 ops/s    | 1,679,496 ops/s    |
-| MessagePack          |  150 bytes   | 796,269 ops/s      | 1,376,546 ops/s    |
-| Native JSON Methods  |  205 bytes   | 1,641,224 ops/s    | 1,219,356 ops/s    |
+| Library              | Payload Size | Encoding (ops/sec) | Decoding (ops/sec) | Pooled Decoding (ops/sec) |
+| -------------------- | ------------ | ------------------ | ------------------ | ------------------------- |
+| SchemaPack           |   40 bytes   | 4,727,527 ops/s    | 3,416,007 ops/s    | 4,026,528 ops/s           |
+| MessagePack          |  150 bytes   |   837,954 ops/s    | 1,359,004 ops/s    | N/A                       |
+| Native JSON Methods  |  205 bytes   | 1,642,498 ops/s    | 1,259,750 ops/s    | N/A                       |
 
 #### After 10,000,000 Iterations
-| Library              | Payload Size | Encoding (ops/sec) | Decoding (ops/sec) |
-| -------------------- | ------------ | ------------------ | ------------------ |
-| SchemaPack           |   59 bytes   | 2,921,812 ops/s    | 1,683,226 ops/s    |
-| MessagePack          |  150 bytes   | 853,490 ops/s      | 1,363,437 ops/s    |
-| Native JSON Methods  |  205 bytes   | 1,612,329 ops/s    | 1,257,947 ops/s    |
+| Library              | Payload Size | Encoding (ops/sec) | Decoding (ops/sec) | Pooled Decoding (ops/sec) |
+| -------------------- | ------------ | ------------------ | ------------------ | ------------------------- |
+| SchemaPack           |   40 bytes   | 4,941,428 ops/s    | 3,772,014 ops/s    | 3,996,334 ops/s           |
+| MessagePack          |  150 bytes   |   862,576 ops/s    | 1,309,794 ops/s    | N/A                       |
+| Native JSON Methods  |  205 bytes   | 1,585,177 ops/s    | 1,252,157 ops/s    | N/A                       |
 
 ## API Reference
 ### Schema Registry

@@ -1,7 +1,11 @@
 # SchemaPack
 
-SchemaPack is a lightweight, high-performance, schema-driven, binary serialization library for TypeScript and JavaScript.
+![npm version](https://img.shields.io/npm/v/%40megaofmegalodon%2Fschemapack)
+![npm downloads](https://img.shields.io/npm/dm/%40megaofmegalodon%2Fschemapack)
+![license](https://img.shields.io/npm/l/%40megaofmegalodon%2Fschemapack)
+![bundle size](https://img.shields.io/bundlephobia/min/%40megaofmegalodon%2Fschemapack)
 
+SchemaPack is a lightweight, high-performance, schema-driven, binary serialization library for TypeScript and JavaScript.
 
 ## Installation
 ```bash
@@ -38,10 +42,9 @@ const decoded = SchemaPack.decode(encoded);
 ```
 
 ## Benchmarks
-Performance comparison against JSON and standard serialization methods:
+Performance comparison measured at 1,000,000 iterations against standard serialization formats.
 
-### Test One
-Passing in this object as the payload for all libraries:
+### Test One: Flat Payload
 ```javascript
 const samplePayload = {
     header: 42,
@@ -51,29 +54,13 @@ const samplePayload = {
 };
 ```
 
-#### After 50,000 Iterations
-| Library              | Payload Size | Encoding (ops/sec) | Decoding (ops/sec) | Pooled Decoding (ops/sec) |
-| -------------------- | ------------ | ------------------ | ------------------ | ------------------------- |
-| SchemaPack           |   33 bytes   | 5,799,511 ops/s    | 4,824,974 ops/s    | 4,273,992 ops/s           |
-| MessagePack          |   86 bytes   | 1,350,982 ops/s    | 2,539,898 ops/s    | N/A                       |
-| Native JSON Methods  |   96 bytes   | 3,188,682 ops/s    | 2,613,633 ops/s    | N/A                       |
-
-#### After 1,000,000 Iterations
 | Library              | Payload Size | Encoding (ops/sec) | Decoding (ops/sec) | Pooled Decoding (ops/sec) |
 | -------------------- | ------------ | ------------------ | ------------------ | ------------------------- |
 | SchemaPack           |   33 bytes   | 6,436,263 ops/s    | 4,989,230 ops/s    | 4,582,111 ops/s           |
 | MessagePack          |   86 bytes   | 1,297,098 ops/s    | 2,580,810 ops/s    | N/A                       |
 | Native JSON Methods  |   96 bytes   | 3,272,478 ops/s    | 2,300,813 ops/s    | N/A                       |
 
-#### After 10,000,000 Iterations
-| Library              | Payload Size | Encoding (ops/sec) | Decoding (ops/sec) | Pooled Decoding (ops/sec) |
-| -------------------- | ------------ | ------------------ | ------------------ | ------------------------- |
-| SchemaPack           |   33 bytes   | 6,598,867 ops/s    | 4,943,375 ops/s    | 4,848,845 ops/s           |
-| MessagePack          |   86 bytes   | 1,320,426 ops/s    | 2,622,500 ops/s    | N/A                       |
-| Native JSON Methods  |   96 bytes   | 3,200,103 ops/s    | 2,544,954 ops/s    | N/A                       |
-
-### Test Two
-Passing in this object as the payload for all libraries:
+### Test Two: Deeply Nested Payload
 ```javascript
 const samplePayload = {
     header: 0,
@@ -84,33 +71,18 @@ const samplePayload = {
 };
 ```
 
-#### After 50,000 Iterations
-| Library              | Payload Size | Encoding (ops/sec) | Decoding (ops/sec) | Pooled Decoding (ops/sec) |
-| -------------------- | ------------ | ------------------ | ------------------ | ------------------------- |
-| SchemaPack           |   40 bytes   | 3,733,224 ops/s    | 3,064,430 ops/s    | 3,185,635 ops/s           |
-| MessagePack          |  150 bytes   |   758,329 ops/s    | 1,209,927 ops/s    | N/A                       |
-| Native JSON Methods  |  205 bytes   | 1,575,301 ops/s    | 1,264,901 ops/s    | N/A                       |
-
-#### After 1,000,000 Iterations
 | Library              | Payload Size | Encoding (ops/sec) | Decoding (ops/sec) | Pooled Decoding (ops/sec) |
 | -------------------- | ------------ | ------------------ | ------------------ | ------------------------- |
 | SchemaPack           |   40 bytes   | 4,727,527 ops/s    | 3,416,007 ops/s    | 4,026,528 ops/s           |
 | MessagePack          |  150 bytes   |   837,954 ops/s    | 1,359,004 ops/s    | N/A                       |
 | Native JSON Methods  |  205 bytes   | 1,642,498 ops/s    | 1,259,750 ops/s    | N/A                       |
 
-#### After 10,000,000 Iterations
-| Library              | Payload Size | Encoding (ops/sec) | Decoding (ops/sec) | Pooled Decoding (ops/sec) |
-| -------------------- | ------------ | ------------------ | ------------------ | ------------------------- |
-| SchemaPack           |   40 bytes   | 4,941,428 ops/s    | 3,772,014 ops/s    | 3,996,334 ops/s           |
-| MessagePack          |  150 bytes   |   862,576 ops/s    | 1,309,794 ops/s    | N/A                       |
-| Native JSON Methods  |  205 bytes   | 1,585,177 ops/s    | 1,252,157 ops/s    | N/A                       |
-
 ## API Reference
 ### Schema Registry
-* ```SchemaPack.register(layout: PacketSchemaLayout, options?: RegistryOptions): number``` - Creates a packet schema internally and returns packet opcode.
+* ```SchemaPack.register(layout: PacketSchemaLayout, options?: RegistryOptions): number``` - Creates a packet schema internally and returns packet opcode. Opcode serves as a unique identifier for encoding and decoding operations. 
 
 ### SchemaPack Configurations
-* ```SchemaPack.resize(newSize: number): void``` - Resizes the internal scratch pad buffer.
+* ```SchemaPack.resize(newSize: number): void``` - Resizes the internal scratch pad buffer (in bytes). The default buffer size is 10MB.
 
 ### Encode & Decode
 * ```SchemaPack.encode(opcode, data: any, makeCopy?: boolean): Uint8Array``` - Encodes JavaScript object into ultra-compressed binary layout. Returned Uint8Array is a lightweight view of the internal scratchpad buffer, unless ```makeCopy``` is set to ```true```, in which it returns a copied slice.
@@ -197,7 +169,7 @@ const schema = SchemaPack.register({
 });
 ```
 
-> Note: All "arrays" are internally tuples, for dynamic array creation, use BufferType.
+> Note: All array shorthands like ```["u8"]``` represent fixed-shaped tuples. For dynamic array creation, use BufferType.
 
 ## License
 This project is licensed under MIT.

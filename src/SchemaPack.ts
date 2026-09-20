@@ -175,7 +175,7 @@ export class SchemaPack {
      * Default value assignments:
      * - `PRIMITIVE` (numbers/bytes): `0`
      * - `PRIMITIVE` (booleans): `false`
-     * - `CREATE_BUFFER_OBJ` (TypedArrays): Pre-sized zero-filled array (or empty `[]` / `0`-length buffer if dynamic)
+     * - `CREATE_BUFFER_OBJ` (TypedArrays): Pre-sized zero-filled array
      * - `ENTER_OBJECT`: `{}`
      * - `NEW_ARRAY`: `[]`
      *

@@ -87,7 +87,7 @@ const samplePayload = {
 ### Encode & Decode
 * ```SchemaPack.encode(opcode, data: any, makeCopy?: boolean): Uint8Array``` - Encodes JavaScript object into ultra-compressed binary layout. Returned Uint8Array is a lightweight view of the internal scratchpad buffer, unless ```makeCopy``` is set to ```true```, in which it returns a copied slice.
 * ```SchemaPack.decode(data: Uint8Array): any``` - Decodes packed binary data and reconstructs compressed JavaScript object or array.
-* ```SchemaPack.decodePooled(data: Uint8Array): any``` - Decodes packed binary data using reallocated objects from ringBuffer.
+* ```SchemaPack.decodePooled(data: Uint8Array): any``` - Decodes packed binary data using preallocated objects from ringBuffer.
 
 ### Miscellaneous
 * ```SchemaPack.instantiate(opcode: number): any``` - Instantiates a template JavaScript object or array initialized with zero-values according to opcode's schema layout.

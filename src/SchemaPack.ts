@@ -176,8 +176,6 @@ export class SchemaPack {
      * - `PRIMITIVE` (numbers/bytes): `0`
      * - `PRIMITIVE` (booleans): `false`
      * - `CREATE_BUFFER_OBJ` (TypedArrays): Pre-sized zero-filled array
-     * - `ENTER_OBJECT`: `{}`
-     * - `NEW_ARRAY`: `[]`
      *
      * @param opcode - The unique schema opcode ID returned by {@link SchemaPack.register}.
      * @returns A freshly constructed object structure with default field initializations matching the schema.

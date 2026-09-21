@@ -134,6 +134,8 @@ Primitive types specify raw data sizes in bytes:
 ### Strings
 This library fully supports strings but due to the dynamic nature of strings, strings are restricted from ```decodePooled()``` and ```{ pool: number }``` functionality.
 
+Use the keyword ```"str"``` to denote a string for schema registration.
+
 ### Buffer Types (BufferType)
 To serialize dynamic or fixed-length arrays/buffers, pass a BufferType configuration object:
 ```javascript

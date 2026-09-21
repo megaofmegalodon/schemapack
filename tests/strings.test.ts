@@ -19,6 +19,13 @@ describe("correct bahavior with strings", () => {
         expect(data[2][0]).toBe("i am a string!");
     });
 
+    test("correctly encodes and decodes emojis", () => {
+        const opcode = SchemaPack.register("str");
+        const bytes = SchemaPack.encode(opcode, "🚀");
+        const string = SchemaPack.decode(bytes);
+        expect(string).toBe("🚀");
+    });
+
     test("correctly encodes and decodes in mixed structure", () => {
         const opcode = SchemaPack.register(["str", { thingy: "str", a: ["str", "u8", "str"] }]);
         const bytes = SchemaPack.encode(opcode, ["hellow", { thingy: "hello kind sir!", a: ["the next item is a number!", 255, "told you so!"] }]);

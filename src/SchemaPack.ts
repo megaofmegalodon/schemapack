@@ -681,20 +681,11 @@ export class SchemaPack {
                     indexStack[currentDepth]++;
                 }
 
-                if (ArrayBuffer.isView(target)) {
-                    const byteLength = length * size;
-                    const sourceSlice = this.scratchPadBuffer.subarray(currentLength, currentLength + byteLength);
-                    new Uint8Array(target.buffer, target.byteOffset, target.byteLength).set(sourceSlice);
-
-                    offsetPadding += byteLength;
-                    currentLength += byteLength;
-                } else {
-                    for (let i = 0; i < length; i++) {
-                        const val = this.getVal(inst.type, currentLength);
-                        target[i] = isBool ? val ? true : false : val;
-                        offsetPadding += size;
-                        currentLength += size;
-                    }
+                for (let i = 0; i < length; i++) {
+                    const val = this.getVal(inst.type, currentLength);
+                    target[i] = isBool ? val ? true : false : val;
+                    offsetPadding += size;
+                    currentLength += size;
                 }
             }
         }

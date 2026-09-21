@@ -132,7 +132,7 @@ Primitive types specify raw data sizes in bytes:
 | ```f64```  | 64-bit Floating Point (Double precision) | 8 bytes   |
 
 ### Strings
-This library fully supports strings but due to the dynamic nature of strings, strings are restricted from ```decodePooled()``` and ```{ pool: number }``` functionality.
+This library fully supports strings, but due to the dynamic nature of strings, strings are restricted from using ```decodePooled()``` and ```{ pool: number }``` functionality.
 
 Use the keyword ```"str"``` to denote a string for schema registration.
 

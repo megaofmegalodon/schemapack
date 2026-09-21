@@ -11,7 +11,7 @@ type PrimitiveType = keyof typeof TypeSize;
 type StringType = "str";
 
 type BufferType = { buffer: PrimitiveType, useTyped?: boolean, length?: number };
-type ObjectType = { [key: string]: PrimitiveType | StringType | BufferType | ObjectType | ObjectType[] | PrimitiveType[]; };
+type ObjectType = { [key: string]: PacketSchemaLayout; };
 type PacketSchemaLayout = BufferType | StringType | PrimitiveType | ObjectType | PacketSchemaLayout[];
 
 type PrimitiveInstruction = {
@@ -55,7 +55,7 @@ export class SchemaPack {
 
     private static readonly STRING_INTERNAL_TYPE: PrimitiveType = "u8";
 
-    private static readonly BUFFER_LENGTH_TYPE: PrimitiveType = "i32";
+    private static readonly BUFFER_LENGTH_TYPE: PrimitiveType = "u32";
     private static readonly BUFFER_LENGTH_SIZE = 4;
 
     private static opcodes = 0;
@@ -436,15 +436,20 @@ export class SchemaPack {
                     arr = data;
                 }
 
-                if (!Array.isArray(arr) && !ArrayBuffer.isView(arr))
-                    throw new Error(`SchemaPack: Expected Array or TypedArray for buffer field`);
+                const expectString = inst.isString && typeof arr === "string";
+                if (!expectString && !Array.isArray(arr) && !ArrayBuffer.isView(arr))
+                    throw new Error(`SchemaPack: Expected Array, String, TypedArray for buffer field.`);
 
                 if (inst.length === undefined) {
                     this.setVal(this.BUFFER_LENGTH_TYPE, totalLength, arr.length);
                     totalLength += this.BUFFER_LENGTH_SIZE;
                 }
 
-                if (ArrayBuffer.isView(arr)) {
+                if (typeof arr === "string") {
+                    const bytes = this.encoder.encode(arr);
+                    this.scratchPadBuffer.set(bytes, totalLength);
+                    totalLength += bytes.length;
+                } else if (ArrayBuffer.isView(arr)) {
                     const sourceBytes = new Uint8Array(arr.buffer, arr.byteOffset, arr.byteLength);
                     this.scratchPadBuffer.set(sourceBytes, totalLength);
                     totalLength += sourceBytes.byteLength;
@@ -574,7 +579,7 @@ export class SchemaPack {
                     throw new Error(`SchemaPack: Malformed buffer length ${length} exceeds incoming packet payload (${data.length} bytes).`);
 
                 const TypedConstructor = this.getTypedConstructor(inst.type);
-                const target: any | any[] = inst.useTyped ? new TypedConstructor(length) : [];
+                const target: any | any[] = inst.isString ? this.decoder.decode(this.scratchPadBuffer.subarray(currentLength, currentLength + length)) : inst.useTyped ? new TypedConstructor(length) : [];
                 if (instructions.length === 1) result = target;
 
                 if (!Array.isArray(targetItem) && inst.key) {
@@ -585,7 +590,9 @@ export class SchemaPack {
                     indexStack[currentDepth]++;
                 }
 
-                if (ArrayBuffer.isView(target)) {
+                if (inst.isString) {
+                    currentLength += target.length;
+                } else if (ArrayBuffer.isView(target)) {
                     const byteLength = length * size;
                     const sourceSlice = this.scratchPadBuffer.subarray(currentLength, currentLength + byteLength);
                     new Uint8Array(target.buffer, target.byteOffset, target.byteLength).set(sourceSlice);

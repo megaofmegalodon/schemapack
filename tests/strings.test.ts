@@ -31,3 +31,9 @@ describe("correct bahavior with strings", () => {
         expect(data[1].a[2]).toBe("told you so!");
     });
 });
+
+describe("correct error behavior", () => {
+    test("schemas with strings are not static", () => {
+        expect(() => SchemaPack.register(["str"], { pool: 100 })).toThrow();
+    });
+});

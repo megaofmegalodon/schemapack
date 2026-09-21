@@ -346,10 +346,10 @@ export class SchemaPack {
             if (typeof data !== "string")
                 throw new Error(`SchemaPack: Expected string.`);
 
-            this.setVal(this.BUFFER_LENGTH_TYPE, totalLength, data.length);
+            const bytes = this.encoder.encode(data);
+            this.setVal(this.BUFFER_LENGTH_TYPE, totalLength, bytes.length);
             totalLength += this.BUFFER_LENGTH_SIZE;
 
-            const bytes = this.encoder.encode(data);
             this.scratchPadBuffer.set(bytes, totalLength);
             totalLength += bytes.length;
 
@@ -440,13 +440,16 @@ export class SchemaPack {
                 if (!expectString && !Array.isArray(arr) && !ArrayBuffer.isView(arr))
                     throw new Error(`SchemaPack: Expected Array, String, TypedArray for buffer field.`);
 
-                if (inst.length === undefined) {
+                if (!inst.isString && inst.length === undefined) {
                     this.setVal(this.BUFFER_LENGTH_TYPE, totalLength, arr.length);
                     totalLength += this.BUFFER_LENGTH_SIZE;
                 }
 
                 if (typeof arr === "string") {
                     const bytes = this.encoder.encode(arr);
+                    this.setVal(this.BUFFER_LENGTH_TYPE, totalLength, bytes.length);
+                    totalLength += this.BUFFER_LENGTH_SIZE;
+
                     this.scratchPadBuffer.set(bytes, totalLength);
                     totalLength += bytes.length;
                 } else if (ArrayBuffer.isView(arr)) {

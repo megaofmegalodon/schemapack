@@ -104,18 +104,16 @@ export const TypeSize = {
 } as const;
 
 type PrimitiveType = keyof typeof TypeSize;
+type StringType = "str";
 
 type BufferType = { 
-    buffer: PrimitiveType, 
-    useTyped?: boolean, 
-    length?: number 
+    buffer: PrimitiveType;
+    useTyped?: boolean;
+    length?: number;
 };
 
-type ObjectType = { 
-    [key: string]: PrimitiveType | BufferType | ObjectType | ObjectType[] | PrimitiveType[]; 
-};
-
-type PacketSchemaLayout = BufferType | PrimitiveType | ObjectType | PacketSchemaLayout[];
+type ObjectType = { [key: string]: PacketSchemaLayout; };
+type PacketSchemaLayout = BufferType | StringType | PrimitiveType | ObjectType | PacketSchemaLayout[];
 ```
 
 ### Primitive Types
@@ -132,6 +130,9 @@ Primitive types specify raw data sizes in bytes:
 | ```u32```  | Unsigned 32-bit Integer                  | 4 bytes   |
 | ```f32```  | 32-bit Floating Point (Single precision) | 4 bytes   |
 | ```f64```  | 64-bit Floating Point (Double precision) | 8 bytes   |
+
+### Strings
+This library fully supports strings but due to the dynamic nature of strings, strings are restricted from ```decodePooled()``` and ```{ pool: number }``` functionality.
 
 ### Buffer Types (BufferType)
 To serialize dynamic or fixed-length arrays/buffers, pass a BufferType configuration object:

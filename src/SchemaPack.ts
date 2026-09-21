@@ -8,10 +8,11 @@ export const TypeSize = {
 } as const;
 
 type PrimitiveType = keyof typeof TypeSize;
+type StringType = "str";
 
 type BufferType = { buffer: PrimitiveType, useTyped?: boolean, length?: number };
-type ObjectType = { [key: string]: PrimitiveType | BufferType | ObjectType | ObjectType[] | PrimitiveType[]; };
-type PacketSchemaLayout = BufferType | PrimitiveType | ObjectType | PacketSchemaLayout[];
+type ObjectType = { [key: string]: PrimitiveType | StringType | BufferType | ObjectType | ObjectType[] | PrimitiveType[]; };
+type PacketSchemaLayout = BufferType | StringType | PrimitiveType | ObjectType | PacketSchemaLayout[];
 
 type PrimitiveInstruction = {
     op: "PRIMITIVE";
@@ -25,7 +26,14 @@ type ExitArrayInstruction = { op: "EXIT_ARRAY" };
 
 type EnterObjectInstruction = { op: "ENTER_OBJECT", key?: string };
 type ExistObjectInstruction = { op: "EXIT_OBJECT" };
-type CreateBufferObjectInstruction = { op: "CREATE_BUFFER_OBJ", type: PrimitiveType, useTyped: boolean, key?: string, length?: number };
+type CreateBufferObjectInstruction = {
+    op: "CREATE_BUFFER_OBJ";
+    type: PrimitiveType;
+    isString?: boolean;
+    useTyped: boolean;
+    key?: string;
+    length?: number;
+};
 
 export type Instruction = EnterObjectInstruction | CreateBufferObjectInstruction | ExistObjectInstruction | NewArrayInstruction | ExitArrayInstruction | PrimitiveInstruction;
 
@@ -40,6 +48,12 @@ type RegistryOptions = { pool?: number };
 
 export class SchemaPack {
     private constructor() { }
+
+    private static encoder = new TextEncoder();
+    private static decoder = new TextDecoder();
+
+    private static readonly STRING_INTERNAL_TYPE: PrimitiveType = "u8";
+
     private static readonly BUFFER_LENGTH_TYPE: PrimitiveType = "i32";
     private static readonly BUFFER_LENGTH_SIZE = 4;
 
@@ -83,6 +97,20 @@ export class SchemaPack {
         onlyStaticLayout?: boolean
     ) {
         if (typeof fields === "string") {
+            if (fields === "str") {
+                if (onlyStaticLayout)
+                    throw new Error(`SchemaPack: Cannot register static layout with string.`);
+
+                instructions.push({
+                    op: "CREATE_BUFFER_OBJ",
+                    type: this.STRING_INTERNAL_TYPE,
+                    useTyped: true,
+                    isString: true,
+                    key
+                });
+                return;
+            }
+
             if (!this.isPrimitiveType(fields))
                 throw new Error(`SchemaPack: Invalid primitive type: ${fields}`);
 
@@ -309,7 +337,20 @@ export class SchemaPack {
         }
 
         let totalLength = 1;
-        let offsetPadding = 0;
+        if (firstInstruction.op === "CREATE_BUFFER_OBJ" && firstInstruction.isString) {
+            if (typeof data !== "string")
+                throw new Error(`SchemaPack: Expected string.`);
+
+            this.setVal(this.BUFFER_LENGTH_TYPE, totalLength, data.length);
+            totalLength += this.BUFFER_LENGTH_SIZE;
+
+            const bytes = this.encoder.encode(data);
+            this.scratchPadBuffer.set(bytes, totalLength);
+            totalLength += bytes.length;
+
+            return makeCopy ? this.scratchPadBuffer.slice(0, totalLength) : this.scratchPadBuffer.subarray(0, totalLength);
+        }
+
         const itemStack: any[] = [data];
         const indexStack: number[] = [0];
 
@@ -391,20 +432,17 @@ export class SchemaPack {
 
                 if (inst.length === undefined) {
                     this.setVal(this.BUFFER_LENGTH_TYPE, totalLength, arr.length);
-                    offsetPadding += this.BUFFER_LENGTH_SIZE;
                     totalLength += this.BUFFER_LENGTH_SIZE;
                 }
 
                 if (ArrayBuffer.isView(arr)) {
                     const sourceBytes = new Uint8Array(arr.buffer, arr.byteOffset, arr.byteLength);
                     this.scratchPadBuffer.set(sourceBytes, totalLength);
-                    offsetPadding += sourceBytes.byteLength;
                     totalLength += sourceBytes.byteLength;
                 } else {
                     for (let j = 0; j < arr.length; j++) {
                         const val = arr[j];
                         this.setVal(inst.type, totalLength, isBool ? val ? 1 : 0 : val);
-                        offsetPadding += size;
                         totalLength += size;
                     }
                 }
@@ -448,12 +486,20 @@ export class SchemaPack {
             return isBool ? val ? true : false : val;
         }
 
+        let currentLength = 1;
+        if (firstInstruction.op === "CREATE_BUFFER_OBJ" && firstInstruction.isString) {
+            if (typeof data !== "string")
+                throw new Error(`SchemaPack: Expected string.`);
+
+            const length = this.getVal(this.BUFFER_LENGTH_TYPE, currentLength);
+            currentLength += this.BUFFER_LENGTH_SIZE;
+
+            return this.decoder.decode(this.scratchPadBuffer.subarray(currentLength, currentLength + length));
+        }
+
         const result: any = firstInstruction.op === "ENTER_OBJECT" ? {} : [];
         const itemStack: (any[] | any)[] = [result];
         const indexStack: number[] = [0];
-
-        let offsetPadding = 0;
-        let currentLength = 1;
 
         for (let i = 0; i < instructions.length; i++) {
             const inst = instructions[i];
@@ -513,7 +559,6 @@ export class SchemaPack {
                 const isBool = inst.type === "bool";
 
                 if (inst.length === undefined) {
-                    offsetPadding += this.BUFFER_LENGTH_SIZE;
                     currentLength += this.BUFFER_LENGTH_SIZE;
                 }
 
@@ -538,14 +583,11 @@ export class SchemaPack {
                     const byteLength = length * size;
                     const sourceSlice = this.scratchPadBuffer.subarray(currentLength, currentLength + byteLength);
                     new Uint8Array(target.buffer, target.byteOffset, target.byteLength).set(sourceSlice);
-
-                    offsetPadding += byteLength;
                     currentLength += byteLength;
                 } else {
                     for (let i = 0; i < length; i++) {
                         const val = this.getVal(inst.type, currentLength);
                         target[i] = isBool ? val ? true : false : val;
-                        offsetPadding += size;
                         currentLength += size;
                     }
                 }

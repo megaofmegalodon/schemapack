@@ -2,6 +2,24 @@ import { describe, expect, test } from "vitest";
 import { SchemaPack } from "../src/SchemaPack";
 
 describe("encodes/decodes BufferType correctly", () => {
+    test("raw dynamic buffer value", () => {
+        const opcode = SchemaPack.register({ buffer: "f32" as const });
+        const payload = [1.5, 2.5, 3.5, 4.5];
+
+        const encoded = SchemaPack.encode(opcode, payload);
+        const decoded = SchemaPack.decode(encoded);
+        expect(decoded).toEqual([1.5, 2.5, 3.5, 4.5]);
+    });
+
+    test("raw pooled dynamic buffer value", () => {
+        const opcode = SchemaPack.register({ buffer: "f32" as const, length: 4 }, { pool: 1 });
+        const payload = [1.5, 2.5, 3.5, 4.5];
+
+        const encoded = SchemaPack.encode(opcode, payload);
+        const decoded = SchemaPack.decode(encoded);
+        expect(decoded).toEqual([1.5, 2.5, 3.5, 4.5]);
+    });
+
     test("dynamic buffer with normal array", () => {
         const opcode = SchemaPack.register({
             id: "u16",

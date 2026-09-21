@@ -32,6 +32,7 @@ type CreateBufferObjectInstruction = {
     isString?: boolean;
     useTyped: boolean;
     key?: string;
+    raw?: boolean;
     length?: number;
 };
 
@@ -106,7 +107,8 @@ export class SchemaPack {
                     type: this.STRING_INTERNAL_TYPE,
                     useTyped: true,
                     isString: true,
-                    key
+                    key,
+                    raw: !isNested
                 });
                 return;
             }
@@ -339,7 +341,7 @@ export class SchemaPack {
             return makeCopy ? this.scratchPadBuffer.slice(0, totalLength) : this.scratchPadBuffer.subarray(0, totalLength);
         }
 
-        if (firstInstruction.op === "CREATE_BUFFER_OBJ" && firstInstruction.isString) {
+        if (firstInstruction.op === "CREATE_BUFFER_OBJ" && firstInstruction.isString && firstInstruction.raw) {
             if (typeof data !== "string")
                 throw new Error(`SchemaPack: Expected string.`);
 
@@ -429,6 +431,10 @@ export class SchemaPack {
                     arr = currentItem;
                 }
 
+                if (instructions.length === 1) {
+                    arr = data;
+                }
+
                 if (!Array.isArray(arr) && !ArrayBuffer.isView(arr))
                     throw new Error(`SchemaPack: Expected Array or TypedArray for buffer field`);
 
@@ -489,13 +495,13 @@ export class SchemaPack {
         }
 
         let currentLength = 1;
-        if (firstInstruction.op === "CREATE_BUFFER_OBJ" && firstInstruction.isString) {
+        if (firstInstruction.op === "CREATE_BUFFER_OBJ" && firstInstruction.isString && firstInstruction.raw) {
             const length = this.getVal(this.BUFFER_LENGTH_TYPE, currentLength);
             currentLength += this.BUFFER_LENGTH_SIZE;
             return this.decoder.decode(this.scratchPadBuffer.subarray(currentLength, currentLength + length));
         }
 
-        const result: any = firstInstruction.op === "ENTER_OBJECT" ? {} : [];
+        let result: any = firstInstruction.op === "ENTER_OBJECT" ? {} : [];
         const itemStack: (any[] | any)[] = [result];
         const indexStack: number[] = [0];
 
@@ -568,6 +574,7 @@ export class SchemaPack {
 
                 const TypedConstructor = this.getTypedConstructor(inst.type);
                 const target: any | any[] = inst.useTyped ? new TypedConstructor(length) : [];
+                if (instructions.length === 1) result = target;
 
                 if (!Array.isArray(targetItem) && inst.key) {
                     targetItem[inst.key] = target;

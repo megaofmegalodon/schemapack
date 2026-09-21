@@ -326,6 +326,7 @@ export class SchemaPack {
 
         this.scratchPadBuffer[0] = opcode;
         const firstInstruction = instructions[0];
+        let totalLength = 1;
 
         if (firstInstruction.op === "PRIMITIVE" && firstInstruction.raw) {
             if (typeof data !== "number")
@@ -333,10 +334,11 @@ export class SchemaPack {
 
             const isBool = firstInstruction.type === "bool";
             this.setVal(firstInstruction.type, 1, isBool ? data ? 1 : 0 : data);
-            return this.scratchPadBuffer.subarray(0, 1 + TypeSize[firstInstruction.type]);
+            totalLength += TypeSize[firstInstruction.type];
+
+            return makeCopy ? this.scratchPadBuffer.slice(0, totalLength) : this.scratchPadBuffer.subarray(0, totalLength);
         }
 
-        let totalLength = 1;
         if (firstInstruction.op === "CREATE_BUFFER_OBJ" && firstInstruction.isString) {
             if (typeof data !== "string")
                 throw new Error(`SchemaPack: Expected string.`);

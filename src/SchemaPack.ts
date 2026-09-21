@@ -488,12 +488,8 @@ export class SchemaPack {
 
         let currentLength = 1;
         if (firstInstruction.op === "CREATE_BUFFER_OBJ" && firstInstruction.isString) {
-            if (typeof data !== "string")
-                throw new Error(`SchemaPack: Expected string.`);
-
             const length = this.getVal(this.BUFFER_LENGTH_TYPE, currentLength);
             currentLength += this.BUFFER_LENGTH_SIZE;
-
             return this.decoder.decode(this.scratchPadBuffer.subarray(currentLength, currentLength + length));
         }
 

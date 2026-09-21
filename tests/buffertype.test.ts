@@ -11,7 +11,7 @@ describe("encodes/decodes BufferType correctly", () => {
         expect(decoded).toEqual([1.5, 2.5, 3.5, 4.5]);
     });
 
-    test("raw pooled dynamic buffer value", () => {
+    test("raw pooled buffer value", () => {
         const opcode = SchemaPack.register({ buffer: "f32" as const, length: 4 }, { pool: 1 });
         const payload = [1.5, 2.5, 3.5, 4.5];
 

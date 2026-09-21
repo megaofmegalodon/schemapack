@@ -224,7 +224,7 @@ export class SchemaPack {
             return isBool ? false : 0;
         }
 
-        const result: any = firstInstruction.op === "ENTER_OBJECT" ? {} : [];
+        let result: any = firstInstruction.op === "ENTER_OBJECT" ? {} : [];
         const itemStack: (any[] | any)[] = [result];
         const indexStack: number[] = [0];
 
@@ -284,6 +284,7 @@ export class SchemaPack {
 
                 const TypedConstructor = this.getTypedConstructor(inst.type);
                 const target: any | any[] = inst.useTyped ? new TypedConstructor(length).fill(0) : new Array(length).fill(isBool ? false : 0);
+                if (instructions.length === 1) result = target;
 
                 if (!Array.isArray(targetItem) && inst.key) {
                     targetItem[inst.key] = target;
